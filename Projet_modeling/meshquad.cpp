@@ -249,6 +249,7 @@ void MeshQuad::create_cube()
 			
 
 	// ajouter 6 faces (sens trigo)
+
 	this->add_quad(6,2,0,4);
 	this->add_quad(0,1,5,4);
 
@@ -260,14 +261,6 @@ void MeshQuad::create_cube()
 	gl_update();
 }
 
-Vec3 MeshQuad::vector_product ( const Vec3& u, const Vec3& v )
-{
-	double a = u[1]*v[2] - u[2]*v[1];
-	double b = u[2]*v[0] - u[0]*v[2];
-	double c = u[0]*v[1] - u[1]*v[0];
-
-	return Vec3(a, b, c);
-}
 Vec3 MeshQuad::is_sparta ( void ) { return Vec3(); }
 Vec3 MeshQuad::normal_of_quad(const Vec3& A, const Vec3& B, const Vec3& C, const Vec3& D)
 {
@@ -283,37 +276,17 @@ Vec3 MeshQuad::normal_of_quad(const Vec3& A, const Vec3& B, const Vec3& C, const
 	Vec3 n = Vec3();
 
 	n += this->is_sparta();
-	n += this->vector_product(AB, BC);
-	n += this->vector_product(BC, CD);
-	n += this->vector_product(CD, DA);
-	n += this->vector_product(DA, AB);
+	n += glm::cross(AB, BC);
+	n += glm::cross(BC, CD);
+	n += glm::cross(CD, DA);
+	n += glm::cross(DA, AB);
 
 //	std::cout << "avant normalisation " << n[0] << " " << n[1] << " " << n[2] << std::endl;
 	
 	for ( int i = 0 ; i < 3 ; i++)
 		n[i] /= 4.0;
 
-//	std::cout << "avant normalisation " << n[0] << " " << n[1] << " " << n[2] << std::endl;
-	
-	double max = n[0];
-	double min = n[0];
-
-	for ( int i = 1 ; i < 3 ; i++)
-	{
-		if ( n[i] > max )
-			max = n[i];
-		else if ( n[i] < min )
-			min = n[i];
-	}
-
-	for ( int i = 0 ; i < 3 ; i++ )
-	{
-		if ( max - min != 0 )
-		n[i] =  ( (n[i] - min) / ( max - min ) );
-	}
-
-//	std::cout << max << "  " << min << std::endl;
-
+	n = glm::normalize(n);
 //	std::cout << "après normalisation " << n[0] << " " << n[1] << " " << n[2] << std::endl;
 
 
@@ -322,13 +295,18 @@ Vec3 MeshQuad::normal_of_quad(const Vec3& A, const Vec3& B, const Vec3& C, const
 
 float MeshQuad::area_of_quad(const Vec3& A, const Vec3& B, const Vec3& C, const Vec3& D)
 {
-	// aire du quad - aire tri + aire tri
+	// Théorème de Varignon
+	Vec3 I = Vec3( (A.x + B.x) / 2, (A.y + B.y) / 2, (A.z + B.z) / 2 );
+	Vec3 J = Vec3( (B.x + C.x) / 2, (B.y + C.y) / 2, (B.z + C.z) / 2 );
+	Vec3 K = Vec3( (C.x + D.x) / 2, (C.y + D.y) / 2, (C.z + D.z) / 2 );
 
-	// aire du tri = 1/2 aire parallelogramme
+	// 
+	Vec3 JI = Vec3( I.x - J.x, I.y - J.y, I.z - J.z );
+	Vec3 IK = Vec3( K.x - I.x, K.y - I.y, K.z - I.z );
 
-	// aire parallelogramme: cf produit vectoriel
+	glm::mat3 m = glm::mat3(IK, JI, Vec3(1,1,1));
 
-	return 0.0f;
+	return abs(glm::determinant(m)) * 2;
 }
 
 
